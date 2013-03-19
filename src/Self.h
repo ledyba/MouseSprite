@@ -14,7 +14,7 @@ private:
 	int fd_;
 public:
 	Self();
-	virtual ~Self();
+	~Self() noexcept;
 };
 
 }

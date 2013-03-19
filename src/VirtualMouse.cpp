@@ -42,7 +42,7 @@ VirtualMouse::VirtualMouse()
 	throw std::invalid_argument("Uinput device not found.");
 }
 
-VirtualMouse::~VirtualMouse()
+VirtualMouse::~VirtualMouse() noexcept
 {
 	if(close(this->fd_) < 0){
 		std::fprintf(stderr, "Oops. Failed to close uinput: %d", errno);
@@ -73,63 +73,76 @@ void VirtualMouse::createDevice()
 	ioctl(this->fd_, UI_DEV_CREATE, 0);
 }
 
-void VirtualMouse::sendButton(int key, int value)
+void VirtualMouse::sendButton(struct input_event const& ev, int key, int value)
 {
-	  struct input_event event;
-	  gettimeofday(&event.time, NULL);
-	  event.type = EV_KEY;
-	  event.code = key;
-	  event.value = value;
-	  write(fd_, &event, sizeof(event));
+	struct input_event event;
+	event.time = ev.time;
+	event.type = EV_KEY;
+	event.code = key;
+	event.value = value;
+	write(fd_, &event, sizeof(event));
 
-	  event.type = EV_SYN;
-	  event.code = SYN_REPORT;
-	  event.value = 0;
-	  write(fd_, &event, sizeof(event));
+	event.type = EV_SYN;
+	event.code = SYN_REPORT;
+	event.value = 0;
+	write(fd_, &event, sizeof(event));
 }
 
-void VirtualMouse::sendRelX(int x)
+void VirtualMouse::sendRelX(struct input_event const& ev, int x)
 {
-	  struct input_event event;
-	  gettimeofday(&event.time, NULL);
-	  event.type = EV_REL;
-	  event.code = REL_X;
-	  event.value = x;
-	  write(fd_, &event, sizeof(event));
+	struct input_event event;
+	event.time = ev.time;
+	event.type = EV_REL;
+	event.code = REL_X;
+	event.value = x;
+	write(fd_, &event, sizeof(event));
 
-	  event.type = EV_SYN;
-	  event.code = SYN_REPORT;
-	  event.value = 0;
-	  write(fd_, &event, sizeof(event));
+	event.type = EV_SYN;
+	event.code = SYN_REPORT;
+	event.value = 0;
+	write(fd_, &event, sizeof(event));
 }
-void VirtualMouse::sendRelY(int y)
+void VirtualMouse::sendRelY(struct input_event const& ev, int y)
 {
-	  struct input_event event;
-	  gettimeofday(&event.time, NULL);
-	  event.type = EV_REL;
-	  event.code = REL_Y;
-	  event.value = y;
-	  write(fd_, &event, sizeof(event));
+	struct input_event event;
+	event.time = ev.time;
+	event.type = EV_REL;
+	event.code = REL_Y;
+	event.value = y;
+	write(fd_, &event, sizeof(event));
 
-	  event.type = EV_SYN;
-	  event.code = SYN_REPORT;
-	  event.value = 0;
-	  write(fd_, &event, sizeof(event));
+	event.type = EV_SYN;
+	event.code = SYN_REPORT;
+	event.value = 0;
+	write(fd_, &event, sizeof(event));
 }
 
-void VirtualMouse::sendWheel(int value)
+void VirtualMouse::sendWheel(struct input_event const& ev, int value)
 {
-	  struct input_event event;
-	  gettimeofday(&event.time, NULL);
-	  event.type = EV_REL;
-	  event.code = REL_WHEEL;
-	  event.value = value;
-	  write(fd_, &event, sizeof(event));
+	struct input_event event;
+	event.time = ev.time;
+	event.type = EV_REL;
+	event.code = REL_WHEEL;
+	event.value = value;
+	write(fd_, &event, sizeof(event));
 
-	  event.type = EV_SYN;
-	  event.code = SYN_REPORT;
-	  event.value = 0;
-	  write(fd_, &event, sizeof(event));
+	event.type = EV_SYN;
+	event.code = SYN_REPORT;
+	event.value = 0;
+	write(fd_, &event, sizeof(event));
+}
+
+void VirtualMouse::transfer(struct input_event const& ev)
+{
+	write(fd_, &ev, sizeof(ev));
+
+	struct input_event event;
+	event.time = ev.time;
+	event.type = EV_SYN;
+	event.code = SYN_REPORT;
+	event.value = 0;
+	write(fd_, &event, sizeof(event));
+
 }
 
 void VirtualMouse::removeDevice()

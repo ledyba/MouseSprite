@@ -19,7 +19,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <linux/input.h>
-#include <linux/uinput.h>
+#include "Translator.h"
 #include "RealMouse.h"
 #include "VirtualMouse.h"
 
@@ -96,80 +96,15 @@ void RealMouse::ungrab()
 	this->grabbed_ = true;
 }
 
-RealMouse::~RealMouse()
+RealMouse::~RealMouse() noexcept
 {
 	if(this->grabbed_){
 		this->ungrab();
 	}
 }
 
-void RealMouse::handle(VirtualMouse& uinput, struct ::input_event& ev)
+void RealMouse::attach(Translator& tr, VirtualMouse& virt)
 {
-	if( ev.type == EV_REL ){
-		switch(ev.code) {
-		case REL_X:
-			std::printf("relx: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendRelX(ev.value);
-			break;
-		case REL_Y:
-			std::printf("rely: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendRelY(ev.value);
-			break;
-		case REL_WHEEL:
-			std::printf("wheel: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendWheel(ev.value);
-			break;
-		default:
-			std::printf("unknown_rel: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			break;
-		}
-	}else if( ev.type == EV_KEY ){
-		switch(ev.code) {
-		case BTN_LEFT:
-			std::printf("left: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_LEFT, ev.value);
-			break;
-		case BTN_RIGHT:
-			std::printf("right: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_RIGHT, ev.value);
-			break;
-		case BTN_MIDDLE:
-			std::printf("middle: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_MIDDLE, ev.value);
-			break;
-		case BTN_SIDE:
-			std::printf("side: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_SIDE, ev.value);
-			break;
-		case BTN_EXTRA:
-			std::printf("extra: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_EXTRA, ev.value);
-			break;
-		case BTN_FORWARD:
-			std::printf("forward: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_FORWARD, ev.value);
-			break;
-		case BTN_BACK:
-			std::printf("back: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_BACK, ev.value);
-			break;
-		case BTN_TASK:
-			std::printf("task: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			uinput.sendButton(BTN_TASK, ev.value);
-			break;
-		default:
-			std::printf("unknown_key: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-			break;
-		}
-	}else if(EV_SYN == ev.type){
-	}else{
-		std::printf("unknown: %04x %04x %04x\n", ev.type, ev.code, ev.value);
-	}
-}
-
-void RealMouse::process(VirtualMouse& uinput)
-{
-	struct ::input_event event;
 	fd_set fdset, key_fdset;
 	int maxfd = 0;
 
@@ -179,16 +114,23 @@ void RealMouse::process(VirtualMouse& uinput)
 		maxfd = std::max(fd, maxfd);
 	}
 
+	struct ::input_event ev;
+	struct ::timeval timeout;
 	while (1) {
 		std::memcpy(&fdset, &key_fdset, sizeof(fd_set));
-		int ret = select(maxfd + 1, &fdset, NULL, NULL, NULL);
-		if (ret <= 0) {
-			throw std::runtime_error("Failed to call #select");
-		}
-		for(int fd : this->fds_) {
-			if (FD_ISSET(fd, &fdset) && read(fd, &event, sizeof(event)) == sizeof(event)){
-				this->handle(uinput, event);
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 50 * 1000;
+		int ret = select(maxfd + 1, &fdset, NULL, NULL, &timeout);
+		if (ret > 0) {
+			for(int fd : this->fds_) {
+				if (FD_ISSET(fd, &fdset) && read(fd, &ev, sizeof(ev)) == sizeof(ev)){
+					tr.handle(virt, ev);
+				}
 			}
+		}else if(ret == 0){
+			tr.timeout(virt);
+		}else{
+			throw std::runtime_error("Failed to call #select");
 		}
 	}
 }

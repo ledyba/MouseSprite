@@ -10,15 +10,20 @@
 #include "Self.h"
 #include "VirtualMouse.h"
 #include "RealMouse.h"
+
+#include "translator/MarbleMouseTranslator.h"
+
 using namespace mspr;
 
 int main() {
 	Self self;
-	RealMouse orig;
+	RealMouse real;
 
-	VirtualMouse ui;
+	VirtualMouse virt;
 
-	orig.process(ui);
+	MarbleMouseTranslator trans;
+
+	real.attach(trans, virt);
 
 	return 0;
 }

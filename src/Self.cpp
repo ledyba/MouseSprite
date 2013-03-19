@@ -35,7 +35,7 @@ Self::Self()
 	}
 }
 
-Self::~Self()
+Self::~Self() noexcept
 {
 	flock(this->fd_, LOCK_UN);
 	close(this->fd_);

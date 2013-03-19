@@ -8,9 +8,9 @@
 #pragma once
 
 #include <vector>
-#include <linux/input.h>
 namespace mspr {
 
+class Translator;
 class VirtualMouse;
 class RealMouse {
 private:
@@ -18,14 +18,12 @@ private:
 	std::vector<int> fds_;
 public:
 	RealMouse();
-	virtual ~RealMouse();
+	~RealMouse() noexcept;
 public:
 	void grab();
 	void ungrab();
 public:
-	void process(VirtualMouse& uinput);
-private:
-	void handle(VirtualMouse& uinput, struct ::input_event& ev);
+	void attach(Translator& tr, VirtualMouse& virt);
 };
 
 }
