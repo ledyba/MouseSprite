@@ -1,11 +1,11 @@
 /*
- * MarbleMouseTranslator.cpp
+ * MarbleMouse.cpp
  *
  *  Created on: Mar 19, 2013
  *      Author: psi
  */
 
-#include "MarbleMouseTranslator.h"
+#include "MarbleMouse.h"
 #include <linux/input.h>
 #include "../VirtualMouse.h"
 #include <cstdio>
@@ -14,18 +14,18 @@ namespace mspr {
 
 static const int kScrollLimit = 30;
 
-MarbleMouseTranslator::MarbleMouseTranslator()
+MarbleMouse::MarbleMouse()
 :state_(NORMAL)
 ,scrollIntegrate_(0)
 {
 
 }
 
-MarbleMouseTranslator::~MarbleMouseTranslator() noexcept
+MarbleMouse::~MarbleMouse() noexcept
 {
 }
 
-void MarbleMouseTranslator::timeout(VirtualMouse& virt)
+void MarbleMouse::timeout(VirtualMouse& virt)
 {
 	switch(this->state_) {
 	case NORMAL:
@@ -41,7 +41,7 @@ void MarbleMouseTranslator::timeout(VirtualMouse& virt)
 	}
 }
 
-void MarbleMouseTranslator::consumeReserved(VirtualMouse& virt)
+void MarbleMouse::consumeReserved(VirtualMouse& virt)
 {
 	for( struct input_event const& ev : this->reserved_ ) {
 		virt.transfer(ev);
@@ -50,19 +50,19 @@ void MarbleMouseTranslator::consumeReserved(VirtualMouse& virt)
 	transState(NORMAL);
 }
 
-void MarbleMouseTranslator::transState(enum State const& to)
+void MarbleMouse::transState(enum State const& to)
 {
 	this->state_ = to;
 }
 
-void MarbleMouseTranslator::initScroll()
+void MarbleMouse::initScroll()
 {
 	this->transState(SCROLLING);
 	this->reserved_.clear();
 	this->scrollIntegrate_ = 0;
 }
 
-void MarbleMouseTranslator::scroll(VirtualMouse& virt, struct ::input_event& ev)
+void MarbleMouse::scroll(VirtualMouse& virt, struct ::input_event& ev)
 {
 	this->scrollIntegrate_ += ev.value;
 	int send = 0;
@@ -77,7 +77,7 @@ void MarbleMouseTranslator::scroll(VirtualMouse& virt, struct ::input_event& ev)
 	if(send) virt.sendWheel(ev, send);
 }
 
-void MarbleMouseTranslator::handle(VirtualMouse& virt, struct ::input_event& ev)
+void MarbleMouse::handle(VirtualMouse& virt, struct ::input_event& ev)
 {
 	if( ev.type == EV_REL ) {
 		switch(this->state_) {

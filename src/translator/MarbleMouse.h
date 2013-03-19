@@ -1,5 +1,5 @@
 /*
- * MarbleMouseTranslator.h
+ * MarbleMouse.h
  *
  *  Created on: Mar 19, 2013
  *      Author: psi
@@ -12,10 +12,10 @@
 
 namespace mspr {
 
-class MarbleMouseTranslator : public Translator{
+class MarbleMouse : public Translator{
 public:
-	MarbleMouseTranslator();
-	virtual ~MarbleMouseTranslator() noexcept;
+	MarbleMouse();
+	virtual ~MarbleMouse() noexcept;
 private:
 	enum State{
 		NORMAL,

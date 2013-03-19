@@ -11,7 +11,9 @@
 #include "VirtualMouse.h"
 #include "RealMouse.h"
 
-#include "translator/MarbleMouseTranslator.h"
+#include "translator/MarbleMouse.h"
+#include "translator/MirrorTranslator.h"
+#include "translator/Kensington.h"
 
 using namespace mspr;
 
@@ -21,7 +23,7 @@ int main() {
 
 	VirtualMouse virt;
 
-	MarbleMouseTranslator trans;
+	Kensington trans;
 
 	real.attach(trans, virt);
 
